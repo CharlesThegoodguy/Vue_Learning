@@ -34,6 +34,7 @@ const errors = reactive({
 
 const errorMessage = ref('');
 const isDiscardModalOpen = ref(false);
+const isSubmitting = ref(false);
 
 // MEMERIKSA APAKAH FORM SUDAH PERNAH DIKETIK
 const isFormDirty = computed(() => {
@@ -113,7 +114,7 @@ const validateAll = () => {
 };
 
 // SUBMIT HANDLER
-const handleSubmit = () => {
+const handleSubmit = async () => {
   const isValid = validateAll();
 
   if (!isValid) {
@@ -121,12 +122,20 @@ const handleSubmit = () => {
     return;
   }
 
-  const record = registerAttendee(props.event.id, form);
-  if (record) {
-    errorMessage.value = '';
-    emit('success', record);
-  } else {
-    errorMessage.value = 'Unable to complete registration. Please check remaining seats.';
+  isSubmitting.value = true;
+  try {
+    const record = await registerAttendee(props.event.id, form);
+    if (record) {
+      errorMessage.value = '';
+      emit('success', record);
+    } else {
+      errorMessage.value = 'Unable to complete registration. Please check remaining seats.';
+    }
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Unable to complete the registration.';
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -236,8 +245,8 @@ const handleConfirmDiscard = () => {
           <button type="button" class="btn-cancel-form" @click="handleCancelClick">
             Cancel
           </button>
-          <button type="submit" class="btn-submit-form">
-            Submit Registration
+          <button type="submit" class="btn-submit-form" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Submitting...' : 'Submit Registration' }}
           </button>
         </div>
       </form>
@@ -407,4 +416,3 @@ const handleConfirmDiscard = () => {
   transform: scale(0.98);
 }
 </style>
-

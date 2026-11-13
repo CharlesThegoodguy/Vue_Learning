@@ -10,7 +10,7 @@ import AppButton from '@/components/ui/AppButton.vue';
 const router = useRouter();
 
 // MENGONSUMSI SINGLE SOURCE OF TRUTH (Hanya mengambil event yang berstatus aktif)
-const { activeEvents, isUserRegistered } = useEvents();
+const { activeEvents, isUserRegistered, isLoading, loadError, loadEvents } = useEvents();
 
 const searchQuery = ref('');
 const selectedCategory = ref('All');
@@ -46,7 +46,12 @@ const handleViewDetail = (id) => {
     </div>
 
     <!-- GRID EVENT AKTIF -->
-    <div v-if="filteredEvents.length > 0" class="event-grid">
+    <div v-if="isLoading" class="api-status">Loading events...</div>
+    <div v-else-if="loadError" class="api-error" role="alert">
+      <p>{{ loadError }}</p>
+      <button class="retry-button" @click="loadEvents">Try again</button>
+    </div>
+    <div v-else-if="filteredEvents.length > 0" class="event-grid">
       <EventCard
         v-for="event in filteredEvents"
         :key="event.id"
@@ -140,5 +145,32 @@ const handleViewDetail = (id) => {
 .empty-action {
   display: flex;
   justify-content: center;
+}
+
+.api-status,
+.api-error {
+  padding: var(--space-4);
+  border-radius: 8px;
+}
+
+.api-status {
+  background: white;
+  color: var(--text-muted);
+}
+
+.api-error {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.retry-button {
+  margin-top: var(--space-3);
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: inherit;
+  background: white;
+  cursor: pointer;
 }
 </style>

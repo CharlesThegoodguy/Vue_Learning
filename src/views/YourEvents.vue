@@ -23,23 +23,31 @@ const isEventDone = (eventId) => {
 // STATE MODAL PEMBATALAN
 const isCancelModalOpen = ref(false);
 const eventToCancel = ref(null);
+const actionError = ref('');
 
 const handleOpenCancelModal = (eventId) => {
   eventToCancel.value = eventId;
   isCancelModalOpen.value = true;
 };
 
-const handleConfirmCancel = () => {
+const handleConfirmCancel = async () => {
   if (eventToCancel.value) {
-    cancelRegistration(eventToCancel.value);
-    isCancelModalOpen.value = false;
-    eventToCancel.value = null;
+    actionError.value = '';
+    try {
+      await cancelRegistration(eventToCancel.value);
+      isCancelModalOpen.value = false;
+      eventToCancel.value = null;
+    } catch (error) {
+      actionError.value =
+        error instanceof Error ? error.message : 'Unable to cancel the registration.';
+    }
   }
 };
 </script>
 
 <template>
   <div class="your-events-container">
+    <div v-if="actionError" class="action-error" role="alert">{{ actionError }}</div>
     <header class="page-header">
       <h2 class="page-title">Your Events</h2>
       <p class="page-desc">Review your confirmed event registrations and view official digital passes.</p>
@@ -129,6 +137,15 @@ const handleConfirmCancel = () => {
 .page-desc {
   color: var(--text-muted);
   font-size: 1.1rem;
+}
+
+.action-error {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-radius: 8px;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
 }
 
 /* EMPTY STATE */
@@ -306,4 +323,3 @@ const handleConfirmCancel = () => {
   text-transform: uppercase;
 }
 </style>
-

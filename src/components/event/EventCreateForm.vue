@@ -3,7 +3,14 @@ import { reactive, ref } from 'vue';
 import AppCard from '@/components/ui/AppCard.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 
-const emit = defineEmits(['submit', 'cancel']);
+const props = defineProps({
+  onSubmit: {
+    type: Function,
+    required: true
+  }
+});
+
+const emit = defineEmits(['cancel']);
 
 // STATE FORMULIR CREATE EVENT
 const form = reactive({
@@ -18,6 +25,7 @@ const form = reactive({
 
 const errorMessage = ref('');
 const successMessage = ref('');
+const isSubmitting = ref(false);
 
 // Format helper to convert YYYY-MM-DDTHH:mm into "Nov 25, 2026 • 10:00 AM"
 const formatEventDate = (dt) => {
@@ -38,7 +46,7 @@ const formatEventDate = (dt) => {
 };
 
 // HANDLER SUBMIT FORM CREATE EVENT
-const handleSubmitEvent = () => {
+const handleSubmitEvent = async () => {
   // Validate Empty Input
   if (!form.title.trim() || !form.date || !form.loc.trim() || !form.desc.trim()) {
     errorMessage.value = 'Please fill in all required fields before publishing the event!';
@@ -46,30 +54,36 @@ const handleSubmitEvent = () => {
     return;
   }
 
-  emit('submit', {
-    title: form.title,
-    cat: form.cat,
-    date: formatEventDate(form.date),
-    loc: form.loc,
-    quota: form.quota,
-    price: form.price,
-    desc: form.desc
-  });
+  isSubmitting.value = true;
+  try {
+    await props.onSubmit({
+      title: form.title,
+      cat: form.cat,
+      date: formatEventDate(form.date),
+      loc: form.loc,
+      quota: form.quota,
+      price: form.price,
+      desc: form.desc
+    });
 
-  // Reset Form
-  form.title = '';
-  form.date = '';
-  form.loc = '';
-  form.quota = 100;
-  form.price = 'Free';
-  form.desc = '';
-  errorMessage.value = '';
-  successMessage.value = 'Event published successfully and is now live!';
+    form.title = '';
+    form.date = '';
+    form.loc = '';
+    form.quota = 100;
+    form.price = 'Free';
+    form.desc = '';
+    errorMessage.value = '';
+    successMessage.value = 'Event published successfully and is now live!';
 
-  // Clear success notification after 1 second
-  setTimeout(() => {
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 1000);
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to publish the event.';
     successMessage.value = '';
-  }, 1000);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 
@@ -130,8 +144,8 @@ const handleSubmitEvent = () => {
         <button type="button" class="btn-secondary-action" @click="emit('cancel')">
           Cancel
         </button>
-        <AppButton variant="primary" type="submit">
-          🚀 Publish Event Now
+        <AppButton variant="primary" type="submit" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Publishing...' : '🚀 Publish Event Now' }}
         </AppButton>
       </div>
     </form>
@@ -246,4 +260,3 @@ const handleSubmitEvent = () => {
   }
 }
 </style>
-

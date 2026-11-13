@@ -26,16 +26,23 @@ const isEventDone = (id) => {
 
 // STATE MODAL PEMBATALAN TIKET
 const isCancelModalOpen = ref(false);
+const actionError = ref('');
 
 const handleOpenCancelModal = () => {
   isCancelModalOpen.value = true;
 };
 
-const handleConfirmCancel = () => {
+const handleConfirmCancel = async () => {
   if (eventId.value) {
-    cancelRegistration(eventId.value);
-    isCancelModalOpen.value = false;
-    router.push('/browse/your-events');
+    actionError.value = '';
+    try {
+      await cancelRegistration(eventId.value);
+      isCancelModalOpen.value = false;
+      router.push('/browse/your-events');
+    } catch (error) {
+      actionError.value =
+        error instanceof Error ? error.message : 'Unable to cancel the registration.';
+    }
   }
 };
 </script>
@@ -45,6 +52,7 @@ const handleConfirmCancel = () => {
     <button class="btn-back" @click="router.push('/browse/your-events')">
       &larr; Back to Your Events
     </button>
+    <div v-if="actionError" class="action-error" role="alert">{{ actionError }}</div>
 
     <!-- JIKA TIKET TERDAFTAR DITEMUKAN -->
     <div v-if="activeTicket" class="ticket-receipt-card">
@@ -153,6 +161,15 @@ const handleConfirmCancel = () => {
   max-width: 700px;
   margin: 0 auto;
   padding-bottom: var(--space-12);
+}
+
+.action-error {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-radius: 8px;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
 }
 
 .btn-back {
@@ -359,4 +376,3 @@ const handleConfirmCancel = () => {
   font-size: 0.95rem;
 }
 </style>
-

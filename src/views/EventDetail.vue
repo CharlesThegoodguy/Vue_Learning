@@ -7,7 +7,7 @@ import AppCard from '@/components/ui/AppCard.vue';
 
 const route = useRoute();
 const router = useRouter();
-const { getEventById, isUserRegistered } = useEvents();
+const { getEventById, isUserRegistered, isLoading, loadError, loadEvents } = useEvents();
 
 // MENGAMBIL DATA EVENT DINAMIS DARI STATE BERDASARKAN ID DI URL
 const event = computed(() => getEventById(route.params.id));
@@ -24,8 +24,15 @@ const isRegistered = computed(() => {
       &larr; Back to Events
     </button>
 
+    <div v-if="isLoading" class="not-found-card">Loading event...</div>
+    <div v-else-if="loadError" class="not-found-card" role="alert">
+      <h2>Unable to Load Event</h2>
+      <p>{{ loadError }}</p>
+      <AppButton variant="primary" @click="loadEvents">Try again</AppButton>
+    </div>
+
     <!-- KONDISI JIKA EVENT DITEMUKAN -->
-    <div v-if="event">
+    <div v-else-if="event">
       <div class="detail-header">
         <div class="header-tags">
           <span class="event-tag">{{ event.cat }}</span>

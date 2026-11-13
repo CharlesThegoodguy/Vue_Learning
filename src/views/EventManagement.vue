@@ -13,7 +13,10 @@ const {
   completedEvents,
   createEvent,
   completeEvent,
-  deleteEvent
+  deleteEvent,
+  isLoading,
+  loadError,
+  loadEvents
 } = useEvents();
 
 // KONDISI TAB AKTIF: 'active' | 'create' | 'completed'
@@ -23,6 +26,7 @@ const currentTab = ref('active');
 const isModalOpen = ref(false);
 const modalAction = ref('complete'); // 'complete' | 'delete'
 const selectedEvent = ref(null);
+const actionError = ref('');
 
 const handleOpenCompleteModal = (event) => {
   selectedEvent.value = event;
@@ -36,16 +40,21 @@ const handleOpenDeleteModal = (event) => {
   isModalOpen.value = true;
 };
 
-const handleConfirmModal = () => {
+const handleConfirmModal = async () => {
   if (selectedEvent.value) {
-    if (modalAction.value === 'complete') {
-      completeEvent(selectedEvent.value.id);
-    } else if (modalAction.value === 'delete') {
-      deleteEvent(selectedEvent.value.id);
+    actionError.value = '';
+    try {
+      if (modalAction.value === 'complete') {
+        await completeEvent(selectedEvent.value.id);
+      } else if (modalAction.value === 'delete') {
+        await deleteEvent(selectedEvent.value.id);
+      }
+      isModalOpen.value = false;
+      selectedEvent.value = null;
+    } catch (error) {
+      actionError.value = error instanceof Error ? error.message : 'Unable to update the event.';
     }
   }
-  isModalOpen.value = false;
-  selectedEvent.value = null;
 };
 
 const handleCancelModal = () => {
@@ -54,11 +63,9 @@ const handleCancelModal = () => {
 };
 
 // HANDLER EVENT DIBUAT DARI EventCreateForm
-const handleCreateEvent = (eventData) => {
-  createEvent(eventData);
-  setTimeout(() => {
-    currentTab.value = 'active';
-  }, 1000);
+const handleCreateEvent = async (eventData) => {
+  await createEvent(eventData);
+  currentTab.value = 'active';
 };
 </script>
 
@@ -73,6 +80,8 @@ const handleCreateEvent = (eventData) => {
         + Create New Event
       </AppButton>
     </div>
+
+    <div v-if="actionError" class="api-error" role="alert">{{ actionError }}</div>
 
     <!-- TAB NAVIGATION SYSTEM -->
     <div class="tabs-container">
@@ -98,7 +107,12 @@ const handleCreateEvent = (eventData) => {
 
     <!-- TAB 1: ACTIVE EVENTS LIST -->
     <section v-if="currentTab === 'active'" class="tab-pane">
-      <div v-if="activeEvents.length > 0" class="events-grid">
+      <div v-if="isLoading" class="api-status">Loading events...</div>
+      <div v-else-if="loadError" class="api-error" role="alert">
+        {{ loadError }}
+        <button class="retry-button" @click="loadEvents">Try again</button>
+      </div>
+      <div v-else-if="activeEvents.length > 0" class="events-grid">
         <OrganizerEventCard
           v-for="item in activeEvents"
           :key="item.id"
@@ -121,14 +135,19 @@ const handleCreateEvent = (eventData) => {
     <!-- TAB 2: CREATE EVENT FORM -->
     <section v-if="currentTab === 'create'" class="tab-pane">
       <EventCreateForm
-        @submit="handleCreateEvent"
+        :on-submit="handleCreateEvent"
         @cancel="currentTab = 'active'"
       />
     </section>
 
     <!-- TAB 3: COMPLETED EVENTS (ARCHIVE) -->
     <section v-if="currentTab === 'completed'" class="tab-pane">
-      <div v-if="completedEvents.length > 0" class="events-grid">
+      <div v-if="isLoading" class="api-status">Loading events...</div>
+      <div v-else-if="loadError" class="api-error" role="alert">
+        {{ loadError }}
+        <button class="retry-button" @click="loadEvents">Try again</button>
+      </div>
+      <div v-else-if="completedEvents.length > 0" class="events-grid">
         <OrganizerEventCard
           v-for="item in completedEvents"
           :key="item.id"
@@ -249,6 +268,35 @@ const handleCreateEvent = (eventData) => {
 .empty-state p {
   color: var(--text-muted);
   margin-bottom: var(--space-6);
+}
+
+.api-status,
+.api-error {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-radius: 8px;
+}
+
+.api-status {
+  background: var(--bg-light);
+  color: var(--text-muted);
+}
+
+.api-error {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.retry-button {
+  display: block;
+  margin-top: var(--space-3);
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: inherit;
+  background: white;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {

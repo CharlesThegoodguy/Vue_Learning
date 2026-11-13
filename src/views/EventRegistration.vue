@@ -9,7 +9,7 @@ import RegistrationReceipt from '@/components/event/RegistrationReceipt.vue';
 
 const route = useRoute();
 const router = useRouter();
-const { getEventById, isUserRegistered } = useEvents();
+const { getEventById, isUserRegistered, isLoading, loadError, loadEvents } = useEvents();
 
 const event = computed(() => getEventById(route.params.id));
 
@@ -42,8 +42,16 @@ const handleGotoYourEvents = () => {
 
 <template>
   <div class="registration-page">
+    <div v-if="isLoading" class="notice-card">Loading event...</div>
+    <div v-else-if="loadError" class="notice-card" role="alert">
+      <span class="notice-badge">ERROR</span>
+      <h2>Unable to Load Event</h2>
+      <p>{{ loadError }}</p>
+      <button class="btn-secondary-link" @click="loadEvents">Try again</button>
+    </div>
+
     <!-- JIKA EVENT DITEMUKAN -->
-    <div v-if="event">
+    <div v-else-if="event">
       <!-- 1. KONDISI SUDAH DAFTAR -->
       <div v-if="isRegistered" class="notice-card">
         <span class="notice-badge">NOTICE</span>
@@ -272,4 +280,3 @@ const handleGotoYourEvents = () => {
   }
 }
 </style>
-

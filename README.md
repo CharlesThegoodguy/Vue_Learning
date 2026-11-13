@@ -31,6 +31,13 @@ npm install
 npm run dev
 ```
 
+### Event data
+
+The event catalog and organizer dashboard use the MockAPI endpoint
+`https://6af6e115e844c7ff741bbc39.mockapi.io/api/v1/events`. Creating, completing, and
+deleting events, as well as changing event quotas during registration, are saved through
+that API. Attendee registration records remain in the browser's local storage.
+
 ### Compile and Minify for Production
 
 ```sh
